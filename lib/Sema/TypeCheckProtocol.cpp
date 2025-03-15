@@ -4451,12 +4451,36 @@ ConformanceChecker::resolveWitnessViaLookup(ValueDecl *requirement) {
         bool isSetter = (check.Kind == CheckKind::AccessOfSetter);
 
         auto &diags = DC->getASTContext().Diags;
-        diags.diagnose(getLocForDiagnosingWitness(conformance, witness),
-                       diagKind, getProtocolRequirementKind(requirement),
-                       witness, isSetter, requiredAccess,
-                       protoAccessScope.accessLevelForDiagnostics(),
-                       proto);
-
+            
+        //if it is initializer && synthesized
+        auto *ctorDecl = dyn_cast<ConstructorDecl>(witness);
+        if (ctorDecl && ctorDecl->isImplicit()) {
+          // If it's a synthesized constructor, emit the special diagnostic.
+          diagKind = diag::implicit_init_witness_not_accessible_proto;
+          auto diag = diags.diagnose(getLocForDiagnosingWitness(conformance, witness), diagKind,
+                         getProtocolRequirementKind(requirement), witness, isSetter,
+                         requiredAccess, protoAccessScope.accessLevelForDiagnostics(),
+                         proto);
+          
+          
+          
+           // Determine the insertion location for the fix-it.
+           SourceLoc fixItLoc = ctorDecl->getStartLoc();
+           if (!fixItLoc.isValid())
+             fixItLoc = getLocForDiagnosingWitness(conformance, witness);
+           
+           // Provide the fix-it suggestion (for example, inserting "public ").
+           diag.fixItInsert(fixItLoc, "public ");
+ 
+  
+        }
+        else {
+          // Otherwise, emit the normal diagnostic.
+          diags.diagnose(getLocForDiagnosingWitness(conformance, witness),diagKind,
+                         getProtocolRequirementKind(requirement),witness, isSetter,
+                         requiredAccess,protoAccessScope.accessLevelForDiagnostics(),
+                         proto);
+        }
         auto *decl = dyn_cast<AbstractFunctionDecl>(witness);
         if (decl && decl->isSynthesized())
           return;

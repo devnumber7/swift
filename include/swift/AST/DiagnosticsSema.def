@@ -2937,6 +2937,19 @@ ERROR(witness_not_accessible_proto,none,
       "%5",
       (RequirementKind, const ValueDecl *, bool, AccessLevel, AccessLevel,
        const ProtocolDecl *))
+
+       //"Implicit memberwise initializer 'init(rawValue:)' is declared internal because it was synthesized"
+       //This conflicts with the requirement that it be declared public 
+       //because it matches a requirement in public protocol 'RawRepresentable'
+ERROR(implicit_init_witness_not_accessible_proto,none,
+	    "Implicit memberwise initializer '%1' is declared "
+      "internal because it was synthesized but must be declared  "
+      "%select{%error|fileprivate|internal|package|public|%error}3 because it matches a "
+      "requirement in %select{private|fileprivate|internal|package|public|%error}4 protocol "
+      "%5",
+       (RequirementKind, const ValueDecl *, bool, AccessLevel, AccessLevel,
+       const ProtocolDecl *))
+       
 ERROR(witness_not_as_sendable,none,
       "sendability of function types in %kind0 does not match requirement in "
       "protocol %1",
@@ -5455,7 +5468,7 @@ NOTE(protocol_witness_async_conflict,none,
      (bool, bool))
 ERROR(async_autoclosure_nonasync_function,none,
       "'async' autoclosure parameter in a non-'async' function", ())
-
+      
 ERROR(async_not_let,none,
       "'async' can only be used with 'let' declarations", ())
 ERROR(async_let_not_local,none,
